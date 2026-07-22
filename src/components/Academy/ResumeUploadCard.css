@@ -209,3 +209,39 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.url-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.url-input-container {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.url-input {
+  flex-grow: 1;
+  background: var(--bg-secondary, #f8fafc);
+  border: 2px solid var(--border-color, #e2e8f0);
+  padding: 0.8rem 1rem;
+  border-radius: 50px;
+  color: var(--text-primary, #1e293b);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: var(--accent-color, #e95a38);
+  box-shadow: 0 0 0 3px rgba(233, 90, 56, 0.1);
+}
+
+.url-submit-btn {
+  padding: 0.8rem 1.8rem;
+  white-space: nowrap;
+  border-radius: 50px;
+}

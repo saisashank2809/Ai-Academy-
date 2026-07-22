@@ -1,66 +1,37 @@
 import React from 'react';
-import { Bot, Clock, Target, CheckCircle2 } from 'lucide-react';
-import './AssessmentLanding.css';
+import './AssessmentLanding.css'; // Keep base styles if any, or remove if unneeded
 
-interface Props {
+// Import V2 Sections
+import V2SectionNavbar from './V2SectionNavbar';
+import V2Section1Hero from './V2Section1Hero';
+import V2Section2Who from './V2Section2Who';
+import V2Section4How from './V2Section4How';
+import V2Section5What from './V2Section5What';
+import V2Section6WhyNow from './V2Section6WhyNow';
+import V2Section7Proof from './V2Section7Proof';
+import V2Section8FAQ from './V2Section8FAQ';
+import V2Section9Push from './V2Section9Push';
+import V2Section10Footer from './V2Section10Footer';
+
+interface AssessmentLandingProps {
   onStart: () => void;
-  onSkipToChat?: () => void;
-  onSkipToSummary?: () => void;
 }
 
-export const AssessmentLanding: React.FC<Props> = ({ onStart, onSkipToChat, onSkipToSummary }) => {
+const AssessmentLanding: React.FC<AssessmentLandingProps> = ({ onStart }) => {
   return (
-    <div className="landing-container fade-in">
-      <div className="landing-card">
-        <h1 className="title">Ottobon AI Readiness Assessment</h1>
-        <p className="subtitle">Understand how AI will transform your career and discover your personalized path forward.</p>
-        
-        <div className="features-grid">
-          <div className="feature-item">
-            <Clock size={20} className="feature-icon" />
-            <span>15-20 Minutes</span>
-          </div>
-          <div className="feature-item">
-            <CheckCircle2 size={20} className="feature-icon" />
-            <span>Personalized</span>
-          </div>
-          <div className="feature-item">
-            <Target size={20} className="feature-icon" />
-            <span>Role Specific</span>
-          </div>
-          <div className="feature-item">
-            <Bot size={20} className="feature-icon" />
-            <span>AI Evaluated</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-          <button className="btn btn-primary start-btn" onClick={onStart}>
-            Start Assessment
-          </button>
-          
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            {onSkipToChat && (
-              <button 
-                className="btn" 
-                onClick={onSkipToChat}
-                style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none' }}
-              >
-                [DEV] Skip to Chat
-              </button>
-            )}
-            {onSkipToSummary && (
-              <button 
-                className="btn" 
-                onClick={onSkipToSummary}
-                style={{ fontSize: '0.9rem', padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none' }}
-              >
-                [DEV] Skip to Summary
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="landing-page v2-landing">
+      <V2SectionNavbar onStart={onStart} />
+      <V2Section1Hero onStart={onStart} />
+      <V2Section2Who />
+      <V2Section4How />
+      <V2Section5What />
+      <V2Section6WhyNow />
+      <V2Section7Proof />
+      <V2Section8FAQ />
+      <V2Section9Push onStart={onStart} />
+      <V2Section10Footer />
     </div>
   );
 };
+
+export default AssessmentLanding;

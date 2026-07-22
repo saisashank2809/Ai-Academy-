@@ -1,9 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import type { FinalAssessment } from '../../types/academy';
-import { Link2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { 
+  Link2, User, Target, BarChart2, CheckCircle, 
+  Route, Briefcase, Zap, Info 
+} from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { academyApi } from '../../api/academyApi';
 import './AssessmentSummary.css';
 
 const LinkedinIcon = ({ size = 20 }) => (
@@ -20,71 +21,79 @@ const TwitterIcon = ({ size = 20 }) => (
   </svg>
 );
 
-const FacebookIcon = ({ size = 20 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-  </svg>
-);
 
-const ImageIcon = ({ size = 20 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-    <polyline points="21 15 16 10 5 21"></polyline>
-  </svg>
-);
 
 interface Props {
   data: FinalAssessment;
 }
 
-const VisualRoadmap = ({ path }: { path: FinalAssessment['recommendedLearningPath'] }) => {
-  if (!path || path.length === 0) return null;
-  return (
-    <section className="report-section visual-roadmap-section">
-      <h3 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>Your Recommended Learning Path</h3>
-      <div className="roadmap-container">
-        {path.map((mod, i) => (
-          <React.Fragment key={i}>
-            <div className="roadmap-node fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="node-icon-wrapper">
-                <span className="node-number">{mod.priority}</span>
-              </div>
-              <div className="node-content">
-                <p>{mod.module}</p>
-              </div>
-            </div>
-            {i < path.length - 1 && <div className="roadmap-connector" />}
-          </React.Fragment>
-        ))}
-      </div>
-    </section>
-  );
-};
-
 export const AssessmentSummary: React.FC<Props> = ({ data }) => {
-  const scoreCardRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<HTMLDivElement>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  
+  // Animate the radial score
+  const [scoreDisplay, setScoreDisplay] = useState(0);
+
+  useEffect(() => {
+    const target = data?.readinessScore?.overall || 0;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += 2;
+      if (current >= target) {
+        setScoreDisplay(target);
+        clearInterval(interval);
+      } else {
+        setScoreDisplay(current);
+      }
+    }, 20);
+    return () => clearInterval(interval);
+  }, [data]);
 
   if (!data || !data.candidate) {
-    return <div style={{ padding: '2rem', color: 'white' }}>Error: Invalid assessment data format received.</div>;
+    return <div style={{ padding: '2rem', color: 'var(--text-primary)' }}>Error: Invalid assessment data format received.</div>;
   }
 
   const handlePrint = async () => {
     try {
       setIsDownloadingPdf(true);
-      const blob = await academyApi.generateReport(data);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Ottobon_AI_Assessment_${data.candidate.name.replace(/\s+/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (!documentRef.current) return;
+      
+      const { default: jsPDF } = await import('jspdf');
+      
+      const element = documentRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#FFFFFF'
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let heightLeft = pdfHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+      
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`Ottobon_AI_Assessment_${data.candidate.name.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
-      console.error("Failed to generate report", err);
+      console.error("Failed to generate PDF locally", err);
+      alert("Failed to generate PDF. Please try again.");
     } finally {
       setIsDownloadingPdf(false);
     }
@@ -93,439 +102,236 @@ export const AssessmentSummary: React.FC<Props> = ({ data }) => {
   const shareUrl = 'https://jobs.ottobon.cloud/academy';
   const shareText = `I just scored a ${data.readinessScore.overall}% on the Ottobon AI Readiness Assessment! My level is ${data.maturityLevel}. See how you stack up!`;
 
-  const handleLinkedInShare = () => {
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank');
-  };
-
-  const handleTwitterShare = () => {
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-  };
-
-  const handleFacebookShare = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-  };
-  
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
     alert("Share text copied to clipboard!");
   };
 
-  const handleDownloadImage = async () => {
-    if (!scoreCardRef.current) return;
-    
-    const element = scoreCardRef.current;
-    element.style.display = 'block';
-    
-    try {
-      const canvas = await html2canvas(element, {
-        backgroundColor: '#F8F2E8',
-        scale: 2,
-        useCORS: true,
-      });
-      
-      const image = canvas.toDataURL("image/png");
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `Ottobon_AI_Readiness_${data.candidate.name.replace(/\s+/g, '_')}.png`;
-      link.click();
-    } catch (err) {
-      console.error("Failed to generate image", err);
-    } finally {
-      element.style.display = 'none';
-    }
-  };
-
   return (
     <div className="report-container fade-in">
-      <div className="report-actions no-print" style={{ gap: '0.8rem', display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: 'var(--text-secondary)', marginRight: '0.5rem', fontWeight: 500 }}>Share Result:</span>
-        <button className="btn-icon" onClick={handleDownloadImage} title="Download Score Image">
-          <ImageIcon size={20} />
-        </button>
-        <button className="btn-icon" onClick={handleLinkedInShare} title="Share on LinkedIn">
-          <LinkedinIcon size={20} />
-        </button>
-        <button className="btn-icon" onClick={handleTwitterShare} title="Share on Twitter (X)">
-          <TwitterIcon size={20} />
-        </button>
-        <button className="btn-icon" onClick={handleFacebookShare} title="Share on Facebook">
-          <FacebookIcon size={20} />
-        </button>
-        <button className="btn-icon" onClick={handleCopyLink} title="Copy text to clipboard">
-          <Link2 size={20} />
-        </button>
+      {/* Header Actions */}
+      <div className="report-actions no-print">
+        <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Share Result:</span>
+        <button className="btn-icon" onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, '_blank')} title="Share on LinkedIn"><LinkedinIcon size={18} /></button>
+        <button className="btn-icon" onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank')} title="Share on Twitter"><TwitterIcon size={18} /></button>
+        <button className="btn-icon" onClick={handleCopyLink} title="Copy text to clipboard"><Link2 size={18} /></button>
+        
         <button 
           className="btn btn-primary" 
           onClick={handlePrint} 
           disabled={isDownloadingPdf}
-          style={{ marginLeft: '1rem', position: 'relative', overflow: 'hidden' }}
+          style={{ marginLeft: '1rem' }}
         >
-          {isDownloadingPdf ? (
-            <>
-              <span style={{ opacity: 0.8 }}>Generating PDF...</span>
-              <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                height: '3px',
-                background: 'rgba(255,255,255,0.8)',
-                animation: 'loadingBar 2s infinite linear'
-              }} className="download-progress-bar" />
-            </>
-          ) : (
-            'Download PDF Report'
-          )}
+          {isDownloadingPdf ? 'Generating PDF...' : 'Download PDF Report'}
         </button>
-        <button className="btn btn-secondary" onClick={() => window.open('https://learn.ottobon.in/our-courses/cohort', '_blank')} style={{ marginLeft: '0.5rem', background: '#334155', color: 'white', border: '1px solid #475569' }}>
-          View Dashboard
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => window.open('https://learn.ottobon.in/our-courses/cohort', '_blank')} 
+          style={{ background: '#334155', color: 'white', border: 'none' }}
+        >
+          View Live Cohorts
         </button>
       </div>
 
       <div className="report-document" ref={documentRef}>
-        <div className="report-cover">
-          <h1 className="report-main-title">OTTOBON AI ACADEMY</h1>
-          <h2 className="report-sub-title">Enterprise AI Readiness Assessment Report</h2>
-        </div>
+        
+        {/* Bento Grid */}
+        <div className="bento-grid">
 
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title" style={{ textAlign: 'center', justifyContent: 'center' }}>Career Transition Potential</h3>
-          <div className="transition-flow">
-            <div className="transition-role">{data.careerTransition.currentRole}</div>
-            <div className="transition-arrow">↓</div>
-            <div className="transition-role highlight">{data.careerTransition.recommendedFutureRole}</div>
-          </div>
-          <div className="profile-grid mt-4">
-            <div className="profile-item"><span className="profile-label">AI Readiness</span><span className="profile-value">{data.careerTransition.aiReadiness}</span></div>
-            <div className="profile-item"><span className="profile-label">Transition Difficulty</span><span className="profile-value">{data.careerTransition.transitionDifficulty}</span></div>
-            <div className="profile-item"><span className="profile-label">Estimated Duration</span><span className="profile-value">{data.careerTransition.estimatedLearningDuration}</span></div>
-          </div>
-        </section>
-
-        <hr className="report-divider" />
-
-        <VisualRoadmap path={data.recommendedLearningPath} />
-
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">1. Candidate Information</h3>
-          <table className="report-table">
-            <tbody>
-              <tr>
-                <td>Assessment ID</td>
-                <td>{data.candidate.assessmentId}</td>
-              </tr>
-              <tr>
-                <td>Candidate Name</td>
-                <td>{data.candidate.name}</td>
-              </tr>
-              <tr>
-                <td>Email</td>
-                <td><a href={`mailto:${data.candidate.email}`}>{data.candidate.email}</a></td>
-              </tr>
-              <tr>
-                <td>Current Profession</td>
-                <td>{data.candidate.currentProfession}</td>
-              </tr>
-              <tr>
-                <td>Current Specialization</td>
-                <td>{data.candidate.currentSpecialization}</td>
-              </tr>
-              <tr>
-                <td>Industry</td>
-                <td>{data.candidate.industry}</td>
-              </tr>
-              <tr>
-                <td>Years of Experience</td>
-                <td>{data.candidate.yearsOfExperience}</td>
-              </tr>
-              <tr>
-                <td>Assessment Date</td>
-                <td>{data.candidate.assessmentDate}</td>
-              </tr>
-              <tr>
-                <td>Resume Uploaded</td>
-                <td>{data.candidate.resumeUploaded}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">2. Executive Summary</h3>
-          <div className="report-text-content">
-            <ReactMarkdown>{data.executiveSummary}</ReactMarkdown>
-          </div>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section page-break-after">
-          <h3 className="section-title">3. Professional Profile</h3>
-          <div className="profile-grid">
-            <div className="profile-item">
-              <span className="profile-label">Current Role</span>
-              <span className="profile-value">{data.professionalProfile.currentRole}</span>
+          {/* 1. HERO WIDGET (Span 12) */}
+          <div className="bento-card hero-score-card span-12">
+            <div className="hero-info">
+              <h1>Ottobon AI Academy</h1>
+              <p>Enterprise AI Readiness Dashboard</p>
+              <div className="maturity-badge">{data.maturityLevel}</div>
             </div>
-            <div className="profile-item">
-              <span className="profile-label">Specialization</span>
-              <span className="profile-value">{data.professionalProfile.specialization}</span>
-            </div>
-            <div className="profile-item">
-              <span className="profile-label">Industry</span>
-              <span className="profile-value">{data.professionalProfile.industry}</span>
-            </div>
-            <div className="profile-item">
-              <span className="profile-label">Years of Experience</span>
-              <span className="profile-value">{data.professionalProfile.yearsOfExperience}</span>
+            
+            <div 
+              className="circular-score" 
+              style={{ '--score': `${scoreDisplay}%` } as React.CSSProperties}
+            >
+              <span className="circular-score-val">{scoreDisplay}%</span>
             </div>
           </div>
-          
-          <div className="responsibilities">
-            <h4>Current Responsibilities</h4>
-            <ul>
-              {data.professionalProfile.currentResponsibilities.map((resp, i) => (
-                <li key={i}>{resp}</li>
+
+          {/* 2. CANDIDATE PROFILE (Span 4) */}
+          <div className="bento-card span-4">
+            <div className="card-header">
+              <h3 className="card-title"><User size={20} className="card-title-icon" /> Professional Profile</h3>
+            </div>
+            <div className="profile-list">
+              <div className="profile-row">
+                <span className="profile-label">Name</span>
+                <span className="profile-value">{data.candidate.name}</span>
+              </div>
+              <div className="profile-row">
+                <span className="profile-label">Current Role</span>
+                <span className="profile-value">{data.professionalProfile.currentRole}</span>
+              </div>
+              <div className="profile-row">
+                <span className="profile-label">Industry</span>
+                <span className="profile-value">{data.professionalProfile.industry}</span>
+              </div>
+              <div className="profile-row">
+                <span className="profile-label">Experience</span>
+                <span className="profile-value">{data.professionalProfile.yearsOfExperience}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. CAREER TRANSITION GOAL (Span 8) */}
+          <div className="bento-card span-8" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="card-header">
+              <h3 className="card-title"><Target size={20} className="card-title-icon" /> AI Career Transition Goal</h3>
+            </div>
+            
+            <div className="transition-container">
+              <div className="transition-role">
+                <span>Current</span>
+                <h4>{data.careerTransition.currentRole}</h4>
+              </div>
+              <div className="transition-arrow">→</div>
+              <div className="transition-role highlight">
+                <span>Target AI Role</span>
+                <h4>{data.careerTransition.recommendedFutureRole}</h4>
+              </div>
+            </div>
+            
+            <div className="transition-meta">
+              <div className="meta-item">
+                <span>Difficulty</span>
+                <strong>{data.careerTransition.transitionDifficulty}</strong>
+              </div>
+              <div className="meta-item">
+                <span>Estimated Time</span>
+                <strong>{data.careerTransition.estimatedLearningDuration}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. SKILL GAP ANALYSIS (Span 6) */}
+          <div className="bento-card span-6">
+            <div className="card-header">
+              <h3 className="card-title"><BarChart2 size={20} className="card-title-icon" /> Skill Gap Analysis</h3>
+            </div>
+            <div className="skill-gap-list">
+              {data.skillGapAnalysis.map((gap, i) => (
+                <div key={i}>
+                  <div className="skill-gap-header">
+                    <span>{gap.skill}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{gap.current} / {gap.target} Target</span>
+                  </div>
+                  <div className="skill-gap-track">
+                    <div className="skill-gap-target" style={{ width: `${(gap.target / 5) * 100}%` }}></div>
+                    <div className="skill-gap-current" style={{ width: `${(gap.current / 5) * 100}%` }}></div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
-        </section>
 
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">4. AI Readiness Score</h3>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th className="align-right">Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Overall AI Readiness</td><td className="align-right">{data.readinessScore.overall}%</td></tr>
-              <tr><td>Technical Readiness</td><td className="align-right">{data.readinessScore.technical}%</td></tr>
-              <tr><td>AI Adoption</td><td className="align-right">{data.readinessScore.adoption}%</td></tr>
-              <tr><td>Prompt Engineering</td><td className="align-right">{data.readinessScore.promptEngineering}%</td></tr>
-              <tr><td>Workflow Automation</td><td className="align-right">{data.readinessScore.workflowAutomation}%</td></tr>
-              <tr><td>Agentic AI Understanding</td><td className="align-right">{data.readinessScore.agenticAi}%</td></tr>
-              <tr><td>AI Governance</td><td className="align-right">{data.readinessScore.governance}%</td></tr>
-              <tr><td>AI Verification</td><td className="align-right">{data.readinessScore.verification}%</td></tr>
-            </tbody>
-          </table>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">5. AI Maturity Level</h3>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Score Range</th>
-                <th>Level</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className={data.maturityLevel === 'Beginner' ? 'highlight-row' : ''}><td>0–20</td><td>Beginner</td></tr>
-              <tr className={data.maturityLevel === 'Emerging' ? 'highlight-row' : ''}><td>21–40</td><td>Emerging</td></tr>
-              <tr className={data.maturityLevel === 'Developing' ? 'highlight-row' : ''}><td>41–60</td><td>Developing</td></tr>
-              <tr className={data.maturityLevel === 'Advanced' ? 'highlight-row' : ''}><td>61–80</td><td>Advanced</td></tr>
-              <tr className={data.maturityLevel === 'AI Leader' ? 'highlight-row' : ''}><td>81–100</td><td>AI Leader</td></tr>
-            </tbody>
-          </table>
-          <div className="maturity-highlight">
-            <strong>Current Level:</strong> {data.maturityLevel}
-          </div>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section page-break-after">
-          <h3 className="section-title">6. Assessment Summary</h3>
-          <div className="profile-grid">
-            <div className="profile-item"><span className="profile-label">Profession</span><span className="profile-value">{data.assessmentSummary.profession}</span></div>
-            <div className="profile-item"><span className="profile-label">AI Usage Frequency</span><span className="profile-value">{data.assessmentSummary.aiUsageFrequency}</span></div>
-            <div className="profile-item"><span className="profile-label">Confidence Level</span><span className="profile-value">{data.assessmentSummary.confidenceLevel}</span></div>
-            <div className="profile-item"><span className="profile-label">Preferred Learning Style</span><span className="profile-value">{data.assessmentSummary.preferredLearningStyle}</span></div>
-            <div className="profile-item"><span className="profile-label">Weekly Availability</span><span className="profile-value">{data.assessmentSummary.weeklyAvailability}</span></div>
-          </div>
-          <div className="responsibilities">
-            <h4>AI Tools Used</h4>
-            <ul>
-              {data.assessmentSummary.aiToolsUsed.map((tool, i) => (
-                <li key={i}>{tool}</li>
+          {/* 5. STRENGTHS & IMPROVEMENTS (Span 6) */}
+          <div className="bento-card span-6">
+            <div className="card-header" style={{ marginBottom: '1rem' }}>
+              <h3 className="card-title"><Zap size={20} className="card-title-icon" /> Capabilities</h3>
+            </div>
+            
+            <span className="profile-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Key Strengths</span>
+            <div className="tags-wrapper" style={{ marginBottom: '1.5rem' }}>
+              {data.strengths.map((str, i) => (
+                <span key={i} className="bento-tag tag-strength">{str}</span>
               ))}
-            </ul>
-          </div>
-        </section>
+            </div>
 
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">7. Technical Competency Evaluation</h3>
-          <p>This section summarizes responses from the role-specific questions.</p>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Skill Area</th>
-                <th>Rating</th>
-                <th>Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.technicalEvaluation.map((evalItem, i) => (
-                <tr key={i}>
-                  <td>{evalItem.skillArea}</td>
-                  <td>{evalItem.rating}</td>
-                  <td>{evalItem.comments}</td>
-                </tr>
+            <span className="profile-label" style={{ marginBottom: '0.5rem', display: 'block' }}>Areas to Improve</span>
+            <div className="tags-wrapper">
+              {data.improvementAreas.map((imp, i) => (
+                <span key={i} className="bento-tag tag-improvement">{imp}</span>
               ))}
-            </tbody>
-          </table>
-        </section>
+            </div>
+          </div>
 
-        <hr className="report-divider" />
+          {/* 6. LEARNING ROADMAP (Span 12) */}
+          {data.recommendedLearningPath && data.recommendedLearningPath.length > 0 && (
+            <div className="bento-card span-12">
+              <div className="card-header">
+                <h3 className="card-title"><Route size={20} className="card-title-icon" /> Recommended Learning Roadmap</h3>
+              </div>
+              <div className="roadmap-bento-list">
+                {data.recommendedLearningPath.map((mod, i) => (
+                  <div key={i} className="roadmap-bento-item">
+                    <div className="roadmap-bento-num">{mod.priority}</div>
+                    <div className="roadmap-bento-content">
+                      <h4>{mod.module}</h4>
+                      {mod.focus && mod.focus !== "Not specified" && <p>{mod.focus}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-        <section className="report-section">
-          <h3 className="section-title">8. Practical Scenario Evaluation</h3>
-          {data.scenarioEvaluations.map((scenario, i) => (
-            <div key={i} className="scenario-block">
-              <h4>Scenario {i + 1}</h4>
-              <p><strong>Question:</strong> {scenario.question}</p>
-              <p><strong>Candidate Response:</strong> {scenario.candidateResponse}</p>
-              <div className="ai-eval-box">
-                <p><strong>AI Evaluation:</strong></p>
-                <ul>
-                  {scenario.aiEvaluation.map((point, j) => (
-                    <li key={j}>{point}</li>
+          {/* 7. SCENARIO EVALUATIONS (Span 12) */}
+          <div className="bento-card span-12">
+            <div className="card-header">
+              <h3 className="card-title"><Briefcase size={20} className="card-title-icon" /> Practical Scenario Evaluation</h3>
+            </div>
+            <div className="scenario-list">
+              {data.scenarioEvaluations.map((scenario, i) => (
+                <div key={i} className="scenario-item">
+                  <div className="scenario-q">{i+1}. {scenario.question}</div>
+                  <div className="scenario-a" style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Your Response:</span> {scenario.candidateResponse}
+                  </div>
+                  
+                  {scenario.suggestedResponse && scenario.suggestedResponse !== "Not specified" && (
+                    <div className="scenario-a" style={{ borderLeftColor: 'var(--accent-secondary)' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Ideal Approach:</span> {scenario.suggestedResponse}
+                    </div>
+                  )}
+                  
+                  <div className="scenario-eval" style={{ marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <strong style={{ color: 'var(--accent-color)' }}>AI Evaluation Feedback:</strong>
+                      <span className="bento-tag" style={{ background: 'white', fontSize: '0.8rem' }}>Score: {scenario.score}</span>
+                    </div>
+                    <ul>
+                      {scenario.aiEvaluation.map((point, j) => (
+                        <li key={j}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 8. PERSONALIZED RECOMMENDATIONS (Span 12) */}
+          {data.personalizedRecommendations && data.personalizedRecommendations.length > 0 && (
+            <div className="bento-card span-12">
+              <div className="card-header">
+                <h3 className="card-title"><CheckCircle size={20} className="card-title-icon" /> Personalized Recommendations</h3>
+              </div>
+              <div className="report-text-content" style={{ paddingLeft: '1rem' }}>
+                <ul style={{ margin: 0 }}>
+                  {data.personalizedRecommendations.map((rec, i) => (
+                    <li key={i} style={{ marginBottom: '0.8rem', color: 'var(--text-secondary)' }}>{rec}</li>
                   ))}
                 </ul>
               </div>
-              <p className="scenario-score"><strong>Score:</strong> {scenario.score}</p>
             </div>
-          ))}
-        </section>
+          )}
 
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">9. Identified Strengths</h3>
-          <ul>
-            {data.strengths.map((str, i) => <li key={i}>{str}</li>)}
-          </ul>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section page-break-after">
-          <h3 className="section-title">10. Areas for Improvement</h3>
-          <ul>
-            {data.improvementAreas.map((imp, i) => <li key={i}>{imp}</li>)}
-          </ul>
-        </section>
-
-        <hr className="report-divider" />
-
-        <section className="report-section">
-          <h3 className="section-title">11. AI Skill Gap Analysis</h3>
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Skill</th>
-                <th className="align-right">Current</th>
-                <th className="align-right">Target</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.skillGapAnalysis.map((gap, i) => (
-                <tr key={i}>
-                  <td>{gap.skill}</td>
-                  <td className="align-right">{gap.current}/5</td>
-                  <td className="align-right">{gap.target}/5</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-
-        <hr className="report-divider" />
-
-
-
-        <section className="report-section">
-          <h3 className="section-title">12. Personalized Recommendations</h3>
-          <ul>
-            {data.personalizedRecommendations.map((rec, i) => (
-              <li key={i}>{rec}</li>
-            ))}
-          </ul>
-        </section>
-
-
-
-        <hr className="report-divider" />
-
-        <section className="report-section disclaimer">
-          <h3 className="section-title">13. Disclaimer</h3>
-          <p>{data.disclaimer}</p>
-        </section>
-      </div>
-
-      {/* Hidden Score Card for Image Generation */}
-      <div 
-        ref={scoreCardRef} 
-        style={{ 
-          display: 'none', 
-          position: 'absolute', 
-          left: '-9999px',
-          top: 0,
-          width: '800px',
-          padding: '40px',
-          background: '#FFFDFC',
-          color: '#4F6672',
-          fontFamily: "'Inter', sans-serif",
-          borderRadius: '20px',
-          boxShadow: '0 20px 40px rgba(35,71,90,0.1)',
-          border: '2px solid #E8DDD0'
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '36px', fontWeight: 800, margin: 0, fontFamily: "'DM Sans', sans-serif", color: '#E95A38' }}>
-            OTTOBON AI ACADEMY
-          </h1>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, margin: '10px 0 0 0', fontFamily: "'DM Sans', sans-serif", color: '#23475A' }}>
-            Enterprise AI Readiness Assessment
-          </h2>
-        </div>
-        
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FFFFFF', padding: '30px', borderRadius: '15px', border: '1px solid #ECE5DB', boxShadow: '0 4px 12px rgba(35,71,90,0.05)' }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: '18px', color: '#7A8792', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>Candidate</p>
-            <p style={{ margin: '5px 0 20px 0', fontSize: '28px', fontWeight: 700, color: '#23475A', fontFamily: "'DM Sans', sans-serif" }}>{data.candidate.name}</p>
-            
-            <p style={{ margin: 0, fontSize: '18px', color: '#7A8792', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>Profession</p>
-            <p style={{ margin: '5px 0 20px 0', fontSize: '24px', fontWeight: 600, color: '#4F6672' }}>{data.candidate.currentProfession}</p>
-
-            <p style={{ margin: 0, fontSize: '18px', color: '#7A8792', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 600 }}>AI Maturity Level</p>
-            <p style={{ margin: '5px 0 0 0', fontSize: '28px', fontWeight: 800, color: '#E95A38', fontFamily: "'DM Sans', sans-serif" }}>{data.maturityLevel}</p>
-          </div>
-          
-          <div style={{ width: '250px', height: '250px', borderRadius: '50%', background: 'conic-gradient(#E95A38 0%, #D94A2D 50%, #D2A85B 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 30px rgba(233,90,56,0.15)' }}>
-            <div style={{ width: '220px', height: '220px', borderRadius: '50%', background: '#FFFFFF', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '64px', fontWeight: 800, color: '#23475A', fontFamily: "'DM Sans', sans-serif" }}>{data.readinessScore.overall}%</span>
-              <span style={{ fontSize: '16px', color: '#7A8792', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Overall Score</span>
+          {/* 9. DISCLAIMER (Span 12) */}
+          <div className="bento-card span-12" style={{ background: 'transparent', boxShadow: 'none', border: '1px dashed var(--border-color)', textAlign: 'center', padding: '1.5rem' }}>
+            <div className="card-header" style={{ justifyContent: 'center', marginBottom: '0.5rem' }}>
+              <h3 className="card-title" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}><Info size={16} /> Disclaimer</h3>
             </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>{data.disclaimer}</p>
           </div>
-        </div>
+
+        </div> {/* End Bento Grid */}
         
-        <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '16px', color: '#7A8792', fontWeight: 500 }}>
-          Take the assessment at <strong style={{ color: '#E95A38' }}>jobs.ottobon.cloud/academy</strong>
-        </div>
       </div>
     </div>
   );

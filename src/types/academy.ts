@@ -62,6 +62,7 @@ export interface AssessmentScenarioEvaluation {
   scenario: string;
   question: string;
   candidateResponse: string;
+  suggestedResponse?: string;
   aiEvaluation: string[];
   score: string;
 }
@@ -83,6 +84,7 @@ export interface AssessmentCareerTransition {
 export interface AssessmentLearningModule {
   priority: number;
   module: string;
+  focus?: string;
 }
 
 export interface AssessmentMetadata {

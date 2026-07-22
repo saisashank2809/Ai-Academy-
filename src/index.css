@@ -1,38 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Typography */
-  --font-heading: 'DM Sans', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
 
-  /* Color Palette */
-  --bg-color: #F8F2E8;         /* Warm Ivory */
-  --bg-secondary: #FFFDFC;     /* Soft White */
-  --surface-color: #FFFFFF;    /* Surface / Cards */
+  /* Universal Neutral Colors */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
   
-  --text-primary: #23475A;     /* Deep Slate Blue */
-  --text-secondary: #4F6672;   /* Secondary Text */
-  --text-muted: #7A8792;       /* Muted Text */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
   
-  --accent-color: #E95A38;     /* Harvard Orange / Coral */
-  --accent-hover: #D94A2D;
-  --accent-secondary: #D2A85B; /* Muted Gold */
+  --border-color: #E2E8F0;
+  --divider-color: #F1F5F9;
+  --surface-color: #FFFFFF;
   
-  --border-color: #E8DDD0;
-  --divider-color: #ECE5DB;
-  --btn-outline: #23475A;
-  
-  /* Status colors */
-  --success-color: #3A8F65;
-  --warning-color: #D6A13D;
-  --error-color: #D94B4B;
-  
+  /* Status Colors */
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --error-color: #EF4444;
+
+  /* Default Hub Accent (Fallback) */
+  --accent-color: #2563EB;     /* Indigo */
+  --accent-hover: #1D4ED8;
+  --accent-surface: rgba(37, 99, 235, 0.05);
+
   color-scheme: light;
-  background-color: var(--bg-color);
+  background-color: var(--bg-primary);
   color: var(--text-secondary);
   
   font-family: var(--font-body);
-  line-height: 1.7;
+  line-height: 1.6;
   font-weight: 400;
 
   font-synthesis: none;
@@ -41,53 +41,72 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Theme: AI Academy */
+.theme-ai {
+  --accent-color: #E95A38;     /* Burnt Orange */
+  --accent-hover: #D94A2D;
+  --accent-surface: rgba(233, 90, 56, 0.05);
+}
+
+/* Theme: Cloud Academy (Future expansion example) */
+.theme-cloud {
+  --accent-color: #0EA5E9;     /* Sky Blue */
+  --accent-hover: #0284C7;
+  --accent-surface: rgba(14, 165, 233, 0.05);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background-color: var(--bg-primary);
   color: var(--text-secondary);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   color: var(--text-primary);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   margin-top: 0;
 }
 
-h1, h2 { font-weight: 800; }
-h3, h4 { font-weight: 700; }
+h1 { font-weight: 800; }
+h2 { font-weight: 700; line-height: 1.2; }
+h3, h4 { font-weight: 600; line-height: 1.4; }
 
 .small-label {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--accent-color);
+  color: var(--text-tertiary);
   font-size: 0.85rem;
 }
 
 #root {
-  max-width: 1200px;
-  margin: 0 auto;
   width: 100%;
-  padding: 2rem;
-  text-align: center;
+  text-align: left; /* Dense content needs left alignment */
 }
 
-/* Utilities for premium aesthetics */
-.glass-panel {
+/* Core Component: Cards */
+.card, .glass-panel {
   background: var(--surface-color);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(35, 71, 90, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
   position: relative;
   overflow: hidden;
+  transition: all 200ms ease-out;
 }
 
+/* Core Component: Buttons */
 .btn {
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -98,12 +117,12 @@ h3, h4 { font-weight: 700; }
   font-weight: 500;
   font-family: var(--font-body);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 200ms ease-out;
 }
 
 .btn:hover {
   background: var(--surface-color);
-  border-color: var(--btn-outline);
+  border-color: var(--text-tertiary);
 }
 
 .btn-primary {
@@ -111,16 +130,17 @@ h3, h4 { font-weight: 700; }
   border: 1px solid var(--accent-color);
   color: white;
   font-weight: 600;
-  box-shadow: 0 4px 10px rgba(233, 90, 56, 0.2);
+  box-shadow: 0 4px 14px var(--accent-surface);
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(233, 90, 56, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--accent-surface);
 }
 
+/* Core Component: Inputs */
 .input-field {
   background: var(--surface-color);
   border: 1px solid var(--border-color);
@@ -130,23 +150,24 @@ h3, h4 { font-weight: 700; }
   width: 100%;
   font-family: var(--font-body);
   font-size: 0.95rem;
-  transition: all 0.2s ease;
+  transition: all 200ms ease-out;
   box-sizing: border-box;
 }
 
 .input-field:focus {
   outline: none;
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(233, 90, 56, 0.1);
+  box-shadow: 0 0 0 3px var(--accent-surface);
 }
 
+/* Animations */
 .fade-in {
-  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .typing-indicator {

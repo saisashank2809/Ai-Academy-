@@ -1,22 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { ChatMessage, FinalAssessment } from '../../../types/academy';
+import type { ChatMessage } from '../../../types/academy';
 import { academyApi } from '../../../api/academyApi';
 import { MessageBubble } from './MessageBubble';
 import { DynamicQuestionInput } from './DynamicQuestionInput';
+import type { RecommendedTrack } from '../TrackSelection';
 import './AssessmentChat.css';
 
 interface Props {
+  sessionId: string;
   initialResumeText?: string;
-  onComplete: (summary: FinalAssessment) => void;
+  onTracksGenerated: (tracks: RecommendedTrack[], chatData: any) => void;
 }
 
-export const AssessmentChat: React.FC<Props> = ({ initialResumeText, onComplete }) => {
+export const AssessmentChat: React.FC<Props> = ({ sessionId, initialResumeText, onTracksGenerated }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
 
-  const [finalAssessment, setFinalAssessment] = useState<FinalAssessment | null>(null);
+  const [recommendedTracks, setRecommendedTracks] = useState<RecommendedTrack[] | null>(null);
   const hasStartedRef = useRef(false);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export const AssessmentChat: React.FC<Props> = ({ initialResumeText, onComplete 
         });
       }
       
-      const response = await academyApi.sendChatMessage(initialMessages);
+      const response = await academyApi.sendChatMessage(sessionId, initialMessages);
       handleBackendResponse(response);
     };
 
@@ -45,8 +47,8 @@ export const AssessmentChat: React.FC<Props> = ({ initialResumeText, onComplete 
   const handleBackendResponse = (response: any) => {
     setIsLoading(false);
     
-    if (response.finalAssessment) {
-      setFinalAssessment(response.finalAssessment);
+    if (response.recommendedTracks) {
+      setRecommendedTracks(response.recommendedTracks);
     }
 
 const inferMetadata = (message: string, backendMeta: any) => {
@@ -117,7 +119,7 @@ const inferMetadata = (message: string, backendMeta: any) => {
       setIsLoading(true);
       setError(null);
       
-      const response = await academyApi.sendChatMessage(updatedMessages);
+      const response = await academyApi.sendChatMessage(sessionId, updatedMessages);
       handleBackendResponse(response);
     } catch (err: any) {
       console.error(err);
@@ -169,13 +171,13 @@ const inferMetadata = (message: string, backendMeta: any) => {
         </div>
 
         <div className="chat-input-area">
-          {finalAssessment ? (
+          {recommendedTracks ? (
             <button 
               className="btn btn-primary fade-in" 
               style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-              onClick={() => onComplete(finalAssessment)}
+              onClick={() => onTracksGenerated(recommendedTracks, { chatHistory: messages })}
             >
-              View AI Readiness Dashboard
+              View Recommended Tracks
             </button>
           ) : isWaitingForUser ? (
             <DynamicQuestionInput 

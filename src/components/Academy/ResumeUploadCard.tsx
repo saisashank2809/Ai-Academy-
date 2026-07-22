@@ -10,6 +10,7 @@ interface Props {
 export const ResumeUploadCard: React.FC<Props> = ({ onNext }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [profileUrl, setProfileUrl] = useState('');
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -49,6 +50,16 @@ export const ResumeUploadCard: React.FC<Props> = ({ onNext }) => {
     }
   };
 
+  const handleUrlSubmit = () => {
+    if (!profileUrl.trim()) return;
+    setIsUploading(true);
+    // Simulate analyzing the URL
+    setTimeout(() => {
+      setIsUploading(false);
+      onNext(`Profile URL: ${profileUrl}`);
+    }, 1500);
+  };
+
   return (
     <div className="upload-container fade-in">
       <div className="upload-card">
@@ -82,8 +93,28 @@ export const ResumeUploadCard: React.FC<Props> = ({ onNext }) => {
           )}
         </label>
 
-        <div className="skip-section">
+        <div className="url-section">
           <span className="divider">OR</span>
+          <div className="url-input-container">
+            <input 
+              type="url" 
+              className="url-input" 
+              placeholder="Paste LinkedIn or Portfolio URL..."
+              value={profileUrl}
+              onChange={(e) => setProfileUrl(e.target.value)}
+              disabled={isUploading}
+            />
+            <button 
+              className="btn btn-primary url-submit-btn" 
+              onClick={handleUrlSubmit}
+              disabled={!profileUrl.trim() || isUploading}
+            >
+              Analyze
+            </button>
+          </div>
+        </div>
+
+        <div className="skip-section" style={{ marginTop: '1.5rem' }}>
           <button className="btn skip-btn" onClick={() => onNext()} disabled={isUploading}>
             Skip this step <ArrowRight size={18} />
           </button>
