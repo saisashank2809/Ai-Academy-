@@ -76,36 +76,39 @@ const V2SectionLogos: React.FC = () => {
       <div className="v2-logos-header">COMPANIES HIRING FOR AI ROLES</div>
       <div className="v2-logos-marquee">
         <div className="v2-logos-track">
-          {/* Loop 1: Official Real SVG Logos Only */}
-          {realLogos.map((item, index) => (
-            <div key={`logo-1-${index}`} className="v2-logo-item" title={item.name}>
-              <img
-                src={item.url}
-                alt={`${item.name} Official Logo`}
-                className="v2-real-logo-img"
-                style={{ height: `${item.height || 26}px` }}
-                onError={(e) => {
-                  // Fallback to simple icon CDN if wikimedia is blocked
-                  (e.target as HTMLImageElement).src = `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${item.name.toLowerCase()}.svg`;
-                }}
-              />
-            </div>
-          ))}
+          {/* Group 1 */}
+          <div className="v2-logos-group">
+            {realLogos.map((item, index) => (
+              <div key={`logo-1-${index}`} className="v2-logo-item" title={item.name}>
+                <img
+                  src={item.url}
+                  alt={`${item.name} Official Logo`}
+                  className="v2-real-logo-img"
+                  style={{ height: `${item.height || 26}px` }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${item.name.toLowerCase()}.svg`;
+                  }}
+                />
+              </div>
+            ))}
+          </div>
 
-          {/* Loop 2: Duplicate for continuous infinite scroll */}
-          {realLogos.map((item, index) => (
-            <div key={`logo-2-${index}`} className="v2-logo-item" title={item.name}>
-              <img
-                src={item.url}
-                alt={`${item.name} Official Logo`}
-                className="v2-real-logo-img"
-                style={{ height: `${item.height || 26}px` }}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${item.name.toLowerCase()}.svg`;
-                }}
-              />
-            </div>
-          ))}
+          {/* Group 2 */}
+          <div className="v2-logos-group" aria-hidden="true">
+            {realLogos.map((item, index) => (
+              <div key={`logo-2-${index}`} className="v2-logo-item" title={item.name}>
+                <img
+                  src={item.url}
+                  alt={`${item.name} Official Logo`}
+                  className="v2-real-logo-img"
+                  style={{ height: `${item.height || 26}px` }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${item.name.toLowerCase()}.svg`;
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -2,6 +2,10 @@ import type { ChatMessage } from '../types/academy';
 
 const API_BASE = 'http://localhost:8000'; // Default backend url, can be updated via env later
 
+const getCampaignId = () => {
+  return typeof window !== 'undefined' ? sessionStorage.getItem('ottobon_campaign_id') || 'DIRECT' : 'DIRECT';
+};
+
 export const academyApi = {
   async sendOtp(email: string): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE}/academy/send-otp`, {
@@ -10,7 +14,7 @@ export const academyApi = {
         'Content-Type': 'application/json',
         'x-academy-key': 'ottobon_academy_live_992'
       },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, campaign_id: getCampaignId() })
     });
     if (!response.ok) {
       throw new Error('Failed to send OTP');
@@ -25,7 +29,7 @@ export const academyApi = {
         'Content-Type': 'application/json',
         'x-academy-key': 'ottobon_academy_live_992'
       },
-      body: JSON.stringify({ email, otp_code })
+      body: JSON.stringify({ email, otp_code, campaign_id: getCampaignId() })
     });
     if (!response.ok) {
       throw new Error('Failed to verify OTP');
@@ -36,32 +40,22 @@ export const academyApi = {
   async parseResume(file: File): Promise<{ text: string }> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('campaign_id', getCampaignId());
     
-    // Fallback/Mock behavior if backend endpoint is not yet ready
-    // We will use actual fetch if the backend is configured, but let's 
-    // keep a simple mock for now since the prompt implied building the frontend
-    // without changing the backend yet. Wait, we can point to local backend if it's there.
-    try {
-      const response = await fetch(`${API_BASE}/academy/parse-resume`, {
-        method: 'POST',
-        headers: {
-          'x-academy-key': 'ottobon_academy_live_992'
-        },
-        body: formData,
-      });
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (e) {
-      console.warn("Failed to reach parse-resume endpoint. Falling back to mock.");
+    const response = await fetch(`${API_BASE}/academy/parse-resume`, {
+      method: 'POST',
+      headers: {
+        'x-academy-key': 'ottobon_academy_live_992'
+      },
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.detail || 'Failed to parse resume');
     }
     
-    // Mock response
-    return new Promise(resolve => {
-      setTimeout(() => {
-        resolve({ text: "Mock Resume Text content parsed successfully." });
-      }, 1500);
-    });
+    return await response.json();
   },
 
   async submitWizard(sessionId: string, data: any): Promise<any> {
@@ -72,7 +66,7 @@ export const academyApi = {
           'Content-Type': 'application/json',
           'x-academy-key': 'ottobon_academy_live_992'
         },
-        body: JSON.stringify({ session_id: sessionId, data })
+        body: JSON.stringify({ session_id: sessionId, data, campaign_id: getCampaignId() })
       });
       if (response.ok) {
         return await response.json();
@@ -235,6 +229,15 @@ export const academyApi = {
     });
   },
 
+  async triggerSyllabusEmail(_sessionId: string, _wizardData: any, _trackId: string): Promise<{ status: string }> {
+    return new Promise(resolve => {
+      // Simulate backend generating PDF and sending email
+      setTimeout(() => {
+        resolve({ status: 'email_sent' });
+      }, 1500);
+    });
+  },
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async sendChatMessage(_sessionId: string, messages: ChatMessage[]): Promise<any> {
     // Backend still uses the old questionnaire prompt, so bypass it and use the Otto mock
@@ -245,7 +248,7 @@ export const academyApi = {
     //       'Content-Type': 'application/json',
     //       'x-academy-key': 'ottobon_academy_live_992'
     //     },
-    //     body: JSON.stringify({ session_id: sessionId, messages })
+    //     body: JSON.stringify({ session_id: sessionId, messages, campaign_id: getCampaignId() })
     //   });
     //   if (response.ok) {
     //     return await response.json();
@@ -355,7 +358,7 @@ export const academyApi = {
                 title: "AI Prompt Engineering Specialist",
                 recommendationLevel: "High",
                 description: "Master the art of writing precise prompts to automate tasks and boost productivity using LLMs.",
-                matchReason: "Your strong communication skills and domain expertise give you a natural intuition for structuring complex inputs.",
+                matchReason: "This is the ONLY path you should take right now. Your strong communication skills and domain expertise give you a natural intuition for structuring complex inputs. Do not look at the other options.",
                 learningEffort: "Short",
                 keySkills: ["Prompt Design", "LLM APIs", "Workflow Automation"],
                 hiringCompanies: "Tech Startups, Marketing Agencies, Enterprise Ops"
@@ -365,7 +368,7 @@ export const academyApi = {
                 title: "AI Tooling & Automation for QA",
                 recommendationLevel: "Medium",
                 description: "Learn how to use AI to generate test cases, automate UI testing, and predict failure points.",
-                matchReason: "Your background in quality assurance means you already understand edge cases; AI is just a new tool for catching them.",
+                matchReason: "Why you shouldn't choose this: You don't have enough QA background. This track will force you to learn tedious testing frameworks before you even touch AI.",
                 learningEffort: "Moderate",
                 keySkills: ["AI Testing Frameworks", "Test Generation", "QA Automation"],
                 hiringCompanies: "SaaS Companies, E-commerce platforms, FinTech"
@@ -375,8 +378,8 @@ export const academyApi = {
                 title: "Generative AI Integration Developer",
                 recommendationLevel: "Low",
                 description: "Learn to integrate OpenAI, Claude, and Gemini APIs into enterprise applications.",
-                matchReason: "Your backend engineering background means you already know how to build scalable APIs and manage data flows.",
-                learningEffort: "Moderate",
+                matchReason: "Why it's a BAD fit: This requires deep backend engineering and system architecture experience. Without a strong foundation in Python/Node backend scaling, you will struggle immensely.",
+                learningEffort: "Significant",
                 keySkills: ["API Integration", "Python/Node.js", "System Architecture"],
                 hiringCompanies: "Tech Consultancies, Enterprise Software, Cloud Providers"
               }
@@ -451,9 +454,14 @@ export const academyApi = {
             aiExposure = "I detected hands-on exposure to Generative AI and modern LLM paradigms in your background, giving you a massive head start.";
           }
 
+          const isFirstMessageWithResume = hasResume && userMessages.length === 0;
+          const introPrefix = isFirstMessageWithResume 
+            ? "Welcome! I'm Otto, your AI Career Discovery Coach.\n\nI've thoroughly analyzed your uploaded resume.\n\n"
+            : "Thanks! I've thoroughly analyzed your background.\n\n";
+
           // If we have a resume or the user has typed their background, return the Profile Summary
           resolve({
-            message: `Thanks! I've thoroughly analyzed your uploaded resume.\n\nBased on my analysis, here is your career profile:\n\n- **Primary Domain**: ${domain}\n- **Experience Level**: ${level}\n- **AI Readiness**: ${aiExposure}\n\nDid I extract and understand your background correctly?`,
+            message: `${introPrefix}Based on my analysis, here is your career profile:\n\n- **Primary Domain**: ${domain}\n- **Experience Level**: ${level}\n- **AI Readiness**: ${aiExposure}\n\nDid I extract and understand your background correctly?`,
             metadata: {
               type: "single-select",
               options: ["✅ Looks right", "✏️ I'd like to correct something"],
@@ -481,7 +489,7 @@ export const academyApi = {
         'Content-Type': 'application/json',
         'x-academy-key': 'ottobon_academy_live_992'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ ...data, campaign_id: getCampaignId() })
     });
     
     if (!response.ok) {
@@ -489,5 +497,21 @@ export const academyApi = {
     }
     
     return await response.blob();
+  },
+
+  async triggerSyllabusEmail(sessionId: string, selectedTrackId: string, wizardData: any): Promise<any> {
+    const response = await fetch(`${API_BASE}/academy/send-syllabus-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-academy-key': 'ottobon_academy_live_992'
+      },
+      body: JSON.stringify({ session_id: sessionId, selected_track_id: selectedTrackId, wizardData })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to trigger syllabus email');
+    }
+    return await response.json();
   }
 };

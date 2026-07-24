@@ -18,7 +18,7 @@ const companies = [
 
 // Interleave images and company cards
 function buildSlides(images: string[]) {
-  const slides: { type: 'image'; src: string } | { type: 'company'; name: string; color: string }[] = [];
+  const slides: Array<{ type: 'image'; src: string } | { type: 'company'; name: string; color: string }> = [];
   let imgIdx = 0;
   let coIdx = 0;
   const total = images.length + companies.length;

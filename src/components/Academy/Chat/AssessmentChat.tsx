@@ -4,7 +4,14 @@ import { academyApi } from '../../../api/academyApi';
 import { MessageBubble } from './MessageBubble';
 import { DynamicQuestionInput } from './DynamicQuestionInput';
 import type { RecommendedTrack } from '../TrackSelection';
-import './AssessmentChat.css';
+import { 
+  PROFESSION_CONTEXTS, 
+  EXPERIENCE_CONTEXTS, 
+  TECHNOLOGY_CONTEXTS, 
+  PROJECT_TYPE_CONTEXTS, 
+  AI_USAGE_CONTEXTS, 
+  AI_TOOLS_CONTEXTS 
+} from '../../../constants/assessmentContexts';
 
 interface Props {
   sessionId: string;
@@ -67,7 +74,7 @@ const inferMetadata = (message: string, backendMeta: any) => {
     return { type: 'single-select', options: ["0-2", "3-5", "5-8", "8+"], allowOther: true };
   }
   if (/(which|what) technologies/i.test(msgLower)) {
-    return { type: 'single-select', options: ["Java", ".NET", "Python", "Node", "React", "Angular"], allowOther: true };
+    return { type: 'multi-select', options: ["Java", ".NET", "Python", "Node", "React", "Angular"], allowOther: true };
   }
   if (/(what kind of|which).*projects/i.test(msgLower)) {
     return { type: 'single-select', options: ["Enterprise Apps", "CRM", "ERP", "Cloud", "Embedded", "Data"], allowOther: true };
@@ -109,9 +116,52 @@ const inferMetadata = (message: string, backendMeta: any) => {
 
   const handleUserSubmit = async (answer: string) => {
     try {
+      const lastMsg = messages[messages.length - 1];
+      let contextData: any = undefined;
+
+      if (lastMsg && lastMsg.role === 'assistant') {
+        const msgLower = lastMsg.content.toLowerCase();
+        
+        if (/(which|what).*(profession|role)/i.test(msgLower) && msgLower.includes('best describes')) {
+          if (PROFESSION_CONTEXTS[answer]) {
+            contextData = { selected: answer, context: PROFESSION_CONTEXTS[answer] };
+          }
+        } else if (/(how many years|what is your).*experience/i.test(msgLower)) {
+          if (EXPERIENCE_CONTEXTS[answer]) {
+            contextData = { selected: answer, context: EXPERIENCE_CONTEXTS[answer] };
+          }
+        } else if (/(which|what) technologies/i.test(msgLower)) {
+          const selectedTechs = answer.split(',').map(s => s.trim());
+          contextData = selectedTechs.map(tech => 
+            TECHNOLOGY_CONTEXTS[tech] 
+              ? { selected: tech, context: TECHNOLOGY_CONTEXTS[tech] } 
+              : { selected: tech }
+          );
+        } else if (/(what kind of|which).*projects/i.test(msgLower)) {
+          const selectedProjects = answer.split(',').map(s => s.trim());
+          contextData = selectedProjects.map(proj => 
+            PROJECT_TYPE_CONTEXTS[proj] 
+              ? { selected: proj, context: PROJECT_TYPE_CONTEXTS[proj] } 
+              : { selected: proj }
+          );
+        } else if (/how often.*use ai/i.test(msgLower)) {
+          if (AI_USAGE_CONTEXTS[answer]) {
+            contextData = { selected: answer, context: AI_USAGE_CONTEXTS[answer] };
+          }
+        } else if (/(which|what) ai tools/i.test(msgLower)) {
+          const selectedTools = answer.split(',').map(s => s.trim());
+          contextData = selectedTools.map(tool => 
+            AI_TOOLS_CONTEXTS[tool] 
+              ? { selected: tool, context: AI_TOOLS_CONTEXTS[tool] } 
+              : { selected: tool }
+          );
+        }
+      }
+
       const newUserMsg: ChatMessage = {
         role: 'user',
-        content: answer
+        content: answer,
+        contextData
       };
       
       const updatedMessages = [...messages, newUserMsg];
@@ -136,33 +186,47 @@ const inferMetadata = (message: string, backendMeta: any) => {
   const isWaitingForUser = !isLoading && lastMessage?.role === 'assistant';
 
   return (
-    <div className="chat-container fade-in">
-      <div className="glass-panel chat-panel">
-        <div className="chat-header">
-          <h2>AI Career Coach</h2>
-          <div className="status-indicator">
-            <span className="dot online"></span> Online
+    <div className="flex justify-center items-center h-[90vh] p-4 opacity-0 animate-slide-up-fade bg-[#0B1120] font-['Inter']">
+      <div className="w-full max-w-[850px] h-full flex flex-col overflow-hidden bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl relative">
+        {/* Glow effects */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[100px] rounded-full pointer-events-none"></div>
+
+        <div className="px-8 py-6 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/80 z-10">
+          <h2 className="m-0 text-xl font-bold text-white tracking-tight font-heading">AI Career Coach</h2>
+          <div className="flex items-center gap-2.5 text-sm font-medium text-slate-400">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            Online
           </div>
         </div>
         {error && (
-          <div style={{ padding: '1rem', background: '#ffebee', color: '#c62828', textAlign: 'center' }}>
+          <div className="p-4 bg-red-900/30 text-red-400 text-center font-medium border-b border-red-900/50 z-10">
             Error: {error}
           </div>
         )}
         
-        <div className="chat-messages">
+        <div className="flex-1 overflow-y-auto px-8 py-10 flex flex-col z-10 relative scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
           {messages.map((msg, idx) => (
             // Skip rendering system messages in the UI
             msg.role !== 'system' && <MessageBubble key={idx} message={msg} />
           ))}
           
           {isLoading && (
-            <div className="message-wrapper ai fade-in">
-              <div className="avatar bot-avatar-loading"></div>
-              <div className="message-content">
-                <div className="sender-name">Ottobon AI</div>
-                <div className="text-content typing-indicator">
-                  <span></span><span></span><span></span>
+            <div className="flex gap-4 w-full mb-10 opacity-0 animate-slide-up-fade flex-row">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border bg-slate-800 border-slate-700 text-indigo-400">
+                <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+              </div>
+              <div className="flex flex-col max-w-[80%] items-start">
+                <div className="text-sm text-slate-400 mb-2 font-medium tracking-wide">Ottobon AI</div>
+                <div className="px-6 py-5 shadow-sm text-base leading-relaxed bg-slate-800/80 border border-slate-700/50 rounded-2xl rounded-tl-sm text-slate-300">
+                  <div className="flex gap-1.5 py-1">
+                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce" style={{ animationDelay: '-0.32s' }}></span>
+                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce" style={{ animationDelay: '-0.16s' }}></span>
+                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce"></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -170,14 +234,14 @@ const inferMetadata = (message: string, backendMeta: any) => {
           <div ref={endOfMessagesRef} />
         </div>
 
-        <div className="chat-input-area">
+        <div className="px-8 py-6 border-t border-slate-800/80 bg-slate-900/90 min-h-[100px] flex flex-col justify-center z-10 backdrop-blur-md">
           {recommendedTracks ? (
             <button 
-              className="btn btn-primary fade-in" 
-              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              className="w-full p-4 text-[1.1rem] bg-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:shadow-indigo-500/30 transition-all opacity-0 animate-slide-up-fade flex items-center justify-center gap-3" 
               onClick={() => onTracksGenerated(recommendedTracks, { chatHistory: messages })}
             >
               View Recommended Tracks
+              <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition-transform">→</div>
             </button>
           ) : isWaitingForUser ? (
             <DynamicQuestionInput 

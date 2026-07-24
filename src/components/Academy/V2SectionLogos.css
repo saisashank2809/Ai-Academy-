@@ -50,10 +50,16 @@
 
 .v2-logos-track {
   display: flex;
-  gap: 4.5rem;
   align-items: center;
   animation: scroll-logos 32s linear infinite;
   width: max-content;
+}
+
+.v2-logos-group {
+  display: flex;
+  gap: 4.5rem;
+  align-items: center;
+  padding-right: 4.5rem; /* Ensures distance to next group is exactly 1 gap */
 }
 
 .v2-logo-item {

@@ -9,9 +9,10 @@ import { SkillGapNarrative } from '../../components/Academy/SkillGapNarrative';
 import type { SkillGapData } from '../../components/Academy/SkillGapNarrative';
 import { AIBlueprint } from '../../components/Academy/AIBlueprint';
 import type { AIBlueprintData } from '../../components/Academy/AIBlueprint';
+import { FinalCTA } from '../../components/Academy/FinalCTA';
 import { academyApi } from '../../api/academyApi';
 
-type AssessmentStep = 'landing' | 'resume' | 'otp' | 'chat' | 'tracks' | 'skill-gap' | 'summary';
+type AssessmentStep = 'landing' | 'resume' | 'otp' | 'chat' | 'tracks' | 'skill-gap' | 'summary' | 'final-cta';
 
 export const AcademyAssessmentFlow: React.FC = () => {
   const [step, setStep] = useState<AssessmentStep>('landing');
@@ -24,8 +25,18 @@ export const AcademyAssessmentFlow: React.FC = () => {
   const [skillGapData, setSkillGapData] = useState<SkillGapData | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Sync state with URL so back button works
+  // Sync state with URL so back button works and capture campaign ID
   useEffect(() => {
+    // 1. Campaign Tracking Logic
+    const urlParams = new URLSearchParams(window.location.search);
+    const campaignParam = urlParams.get('campaign');
+    if (campaignParam) {
+      sessionStorage.setItem('ottobon_campaign_id', campaignParam);
+    } else if (!sessionStorage.getItem('ottobon_campaign_id')) {
+      sessionStorage.setItem('ottobon_campaign_id', 'DIRECT');
+    }
+
+    // 2. Routing Logic
     const handlePopState = () => {
       const hash = window.location.hash.replace('#', '') || 'landing';
       setStep(hash as AssessmentStep);
@@ -35,10 +46,18 @@ export const AcademyAssessmentFlow: React.FC = () => {
     
     // Initial load: read from hash or set default
     const initialHash = window.location.hash.replace('#', '');
+    
     if (initialHash) {
       setStep(initialHash as AssessmentStep);
+    } else if (campaignParam) {
+      // If they came from a QR campaign link, skip landing page and go straight to assessment!
+      // Setting session id here just in case they bypass landing page where handleStart is normally called
+      setSessionId('test_session_123'); 
+      setStep('resume');
+      window.history.replaceState(null, '', '#resume');
     } else {
       window.history.replaceState(null, '', '#landing');
+      setStep('landing');
     }
 
     return () => window.removeEventListener('popstate', handlePopState);
@@ -50,9 +69,8 @@ export const AcademyAssessmentFlow: React.FC = () => {
   };
 
   const handleStart = () => {
-    // TESTING MODE: Skip OTP and go straight to Resume Upload
-    setSessionId('test_session_123');
-    navigateToStep('resume');
+    setSessionId(null);
+    navigateToStep('otp');
   };
 
   const handleResumeNext = (text?: string) => {
@@ -104,11 +122,9 @@ export const AcademyAssessmentFlow: React.FC = () => {
     if (!sessionId || !selectedTrackId) return;
     setIsGenerating(true);
     try {
-      const response = await academyApi.generateDashboardForTrack(sessionId, wizardData, selectedTrackId);
-      if (response.finalAssessment) {
-        setSummaryData(response.finalAssessment);
-        navigateToStep('summary');
-      }
+      // Simulate sending the email with the full blueprint
+      await academyApi.triggerSyllabusEmail(sessionId, selectedTrackId, wizardData);
+      navigateToStep('final-cta');
     } catch (e) {
       console.error(e);
     } finally {
@@ -116,33 +132,7 @@ export const AcademyAssessmentFlow: React.FC = () => {
     }
   };
 
-  const handleSkipToSummary = () => {
-    const mockData: AIBlueprintData = {
-      summary: {
-        trackTitle: "Mock Track Developer",
-        strengths: ["Coding"],
-        learningPriorities: ["LLMs"],
-        projectFocus: "Building stuff",
-        transitionStrategy: "Go fast",
-        closingStatement: "Good luck"
-      },
-      phases: [
-        {
-          phaseNumber: 1,
-          title: "Foundation",
-          objective: "Learn",
-          whyItMatters: "Important",
-          topics: ["Basics"],
-          deliverables: ["Script"],
-          milestone: "Done",
-          expectedOutcome: "Knowledge"
-        }
-      ],
-      optionalTopics: []
-    };
-    setSummaryData(mockData);
-    navigateToStep('summary');
-  };
+
 
   return (
     <div className="academy-flow-container">
@@ -168,13 +158,14 @@ export const AcademyAssessmentFlow: React.FC = () => {
         isGenerating ? (
           <div className="spinner-container" style={{ padding: '5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div className="spinner"></div>
-            <p className="spinner-text" style={{ marginTop: '1.5rem', textAlign: 'center', color: 'white' }}>Generating your detailed dashboard...</p>
+            <p className="spinner-text" style={{ marginTop: '1.5rem', textAlign: 'center', color: 'white' }}>Sending your personalized roadmap to your inbox...</p>
           </div>
         ) : (
           <SkillGapNarrative data={skillGapData} onContinue={handleBuildRoadmap} />
         )
       )}
       {step === 'summary' && summaryData && <AIBlueprint data={summaryData} />}
+      {step === 'final-cta' && <FinalCTA />}
     </div>
   );
 };
