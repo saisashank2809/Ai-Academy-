@@ -23,17 +23,17 @@
   --font-heading: 'Outfit', 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  /* Universal Neutral Colors */
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F8FAFC;
+  /* Universal Neutral Colors - Aligned with Landing Page */
+  --bg-primary: #FAF7F2;
+  --bg-secondary: rgba(255, 255, 255, 0.7);
   
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-tertiary: #94A3B8;
+  --text-primary: #1A1A2E;
+  --text-secondary: #6B6560;
+  --text-tertiary: #8B6914;
   
-  --border-color: #E2E8F0;
-  --divider-color: #F1F5F9;
-  --surface-color: #FFFFFF;
+  --border-color: rgba(26, 26, 46, 0.1);
+  --divider-color: rgba(26, 26, 46, 0.05);
+  --surface-color: rgba(255, 255, 255, 0.85);
   
   /* Status Colors */
   --success-color: #10B981;
@@ -41,9 +41,9 @@
   --error-color: #EF4444;
 
   /* Default Hub Accent (Fallback) */
-  --accent-color: #2563EB;     /* Indigo */
-  --accent-hover: #1D4ED8;
-  --accent-surface: rgba(37, 99, 235, 0.05);
+  --accent-color: #C9A84C;     /* Gold */
+  --accent-hover: #B8973B;
+  --accent-surface: rgba(201, 168, 76, 0.12);
 
   color-scheme: light;
   background-color: var(--bg-primary);
@@ -61,9 +61,9 @@
 
 /* Theme: AI Academy */
 .theme-ai {
-  --accent-color: #E95A38;     /* Burnt Orange */
-  --accent-hover: #D94A2D;
-  --accent-surface: rgba(233, 90, 56, 0.05);
+  --accent-color: #C9A84C;     /* Gold */
+  --accent-hover: #B8973B;
+  --accent-surface: rgba(201, 168, 76, 0.12);
 }
 
 /* Theme: Cloud Academy (Future expansion example) */
@@ -80,8 +80,6 @@ html {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--bg-primary);

@@ -66,7 +66,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
           <button 
             type="button"
             key={idx} 
-            className="bg-slate-800/80 border border-slate-700/50 rounded-lg py-2.5 px-5 transition-all text-slate-300 font-medium hover:not(:disabled):bg-indigo-600 hover:not(:disabled):border-indigo-500 hover:not(:disabled):text-white disabled:opacity-50" 
+            className="bg-[var(--surface-color)] border border-[var(--border-color)] rounded-lg py-2.5 px-5 transition-all duration-200 text-[var(--text-primary)] font-medium cursor-pointer hover:not(:disabled):bg-[var(--accent-color)] hover:not(:disabled):border-[var(--accent-color)] hover:not(:disabled):text-[#FAF7F2] hover:not(:disabled):scale-105 hover:not(:disabled):shadow-md active:not(:disabled):scale-95 disabled:opacity-50" 
             onClick={() => handleSingleSelect(opt)}
             disabled={disabled}
           >
@@ -76,7 +76,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
         {allowOther && (
           <button 
             type="button"
-            className="bg-transparent border border-dashed border-slate-600 rounded-lg py-2.5 px-5 transition-all text-slate-400 font-medium hover:not(:disabled):bg-slate-800 hover:not(:disabled):border-slate-500 hover:not(:disabled):text-white disabled:opacity-50" 
+            className="bg-transparent border border-dashed border-[var(--border-color)] rounded-lg py-2.5 px-5 transition-all duration-200 text-[var(--text-secondary)] font-medium cursor-pointer hover:not(:disabled):bg-[var(--bg-secondary)] hover:not(:disabled):border-[var(--accent-color)] hover:not(:disabled):text-[var(--text-primary)] hover:not(:disabled):scale-105 hover:not(:disabled):shadow-md active:not(:disabled):scale-95 disabled:opacity-50" 
             onClick={() => handleSingleSelect('Other')}
             disabled={disabled}
           >
@@ -95,10 +95,10 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
             <button 
               type="button"
               key={idx} 
-              className={`border rounded-lg py-2 px-4 cursor-pointer transition-all text-[0.95rem] disabled:opacity-50 ${
+              className={`border rounded-lg py-2 px-4 transition-all duration-200 text-[0.95rem] cursor-pointer hover:not(:disabled):scale-105 hover:not(:disabled):shadow-md active:not(:disabled):scale-95 disabled:opacity-50 ${
                 selectedMulti.includes(opt) 
-                  ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300 font-medium' 
-                  : 'bg-slate-800/80 border-slate-700/50 text-slate-300 hover:not(:disabled):border-slate-500'
+                  ? 'bg-[var(--accent-surface)] border-[var(--accent-color)] text-[var(--accent-color)] font-medium' 
+                  : 'bg-[var(--surface-color)] border-[var(--border-color)] text-[var(--text-primary)] hover:not(:disabled):border-[var(--accent-color)]'
               }`}
               onClick={() => toggleMultiSelect(opt)}
               disabled={disabled}
@@ -109,7 +109,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
           {allowOther && (
             <button 
               type="button"
-              className="bg-transparent border border-dashed border-slate-600 rounded-lg py-2 px-4 transition-all text-[0.95rem] text-slate-400 hover:not(:disabled):border-slate-500 disabled:opacity-50" 
+              className="bg-transparent border border-dashed border-[var(--border-color)] rounded-lg py-2 px-4 transition-all duration-200 text-[0.95rem] text-[var(--text-secondary)] cursor-pointer hover:not(:disabled):border-[var(--accent-color)] hover:not(:disabled):scale-105 hover:not(:disabled):shadow-md active:not(:disabled):scale-95 disabled:opacity-50" 
               onClick={() => toggleMultiSelect('Other')}
               disabled={disabled}
             >
@@ -120,7 +120,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
         {selectedMulti.length > 0 && (
           <button 
             type="button" 
-            className="self-end bg-indigo-600 text-white font-semibold py-2.5 px-5 rounded-lg border border-indigo-500 hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/20" 
+            className="self-end bg-[var(--accent-color)] text-[#FAF7F2] font-semibold py-2.5 px-5 rounded-lg border border-[var(--accent-color)] hover:bg-[var(--accent-hover)] transition-all shadow-md shadow-[var(--accent-color)]/20" 
             onClick={submitMultiSelect}
           >
             Submit Selected
@@ -134,7 +134,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
     return (
       <form className="flex gap-3 mt-4 items-end opacity-0 animate-slide-up-fade w-full" onSubmit={submitText}>
         <textarea 
-          className="resize-none rounded-lg w-full bg-slate-900 border border-slate-700 px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-[3px] focus:ring-indigo-500/20 transition-all disabled:opacity-50 placeholder-slate-500" 
+          className="resize-none rounded-lg w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)] focus:ring-[3px] focus:ring-[var(--accent-color)]/20 transition-all disabled:opacity-50 placeholder-[var(--text-tertiary)]" 
           value={textValue}
           onChange={e => setTextValue(e.target.value)}
           placeholder={metadata?.placeholder || "Type your answer..."}
@@ -143,7 +143,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
         />
         <button 
           type="submit" 
-          className="flex items-center justify-center p-3 rounded-lg aspect-square bg-indigo-600 text-white hover:bg-indigo-500 transition-all disabled:opacity-50 disabled:hover:bg-indigo-600" 
+          className="flex items-center justify-center p-3 rounded-lg aspect-square bg-[var(--accent-color)] text-[#FAF7F2] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent-color)]" 
           disabled={!textValue.trim() || disabled}
         >
           <Send size={18} />
@@ -157,7 +157,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
     <form className="flex gap-3 mt-4 items-end opacity-0 animate-slide-up-fade w-full" onSubmit={submitText}>
       <input 
         type="text" 
-        className="rounded-lg w-full bg-slate-900 border border-slate-700 px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-[3px] focus:ring-indigo-500/20 transition-all disabled:opacity-50 placeholder-slate-500" 
+        className="rounded-lg w-full bg-[var(--bg-primary)] border border-[var(--border-color)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)] focus:ring-[3px] focus:ring-[var(--accent-color)]/20 transition-all disabled:opacity-50 placeholder-[var(--text-tertiary)]" 
         value={textValue}
         onChange={e => setTextValue(e.target.value)}
         placeholder={metadata?.placeholder || (showOtherInput ? "Please specify..." : "Type your answer...")}
@@ -166,7 +166,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
       />
       <button 
         type="submit" 
-        className="flex items-center justify-center p-3 rounded-lg aspect-square bg-indigo-600 text-white hover:bg-indigo-500 transition-all disabled:opacity-50 disabled:hover:bg-indigo-600" 
+        className="flex items-center justify-center p-3 rounded-lg aspect-square bg-[var(--accent-color)] text-[#FAF7F2] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-50 disabled:hover:bg-[var(--accent-color)]" 
         disabled={!textValue.trim() || disabled}
       >
         <Send size={18} />
@@ -174,7 +174,7 @@ export const DynamicQuestionInput: React.FC<Props> = ({ metadata, onSubmit, disa
       {showOtherInput && (
         <button 
           type="button" 
-          className="px-5 py-3 border-transparent hover:bg-slate-800 transition-all rounded-lg text-slate-400 font-medium" 
+          className="px-5 py-3 border-transparent hover:bg-[var(--bg-secondary)] transition-all rounded-lg text-[var(--text-secondary)] font-medium" 
           onClick={() => setShowOtherInput(false)}
         >
           Cancel

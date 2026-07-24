@@ -186,15 +186,14 @@ const inferMetadata = (message: string, backendMeta: any) => {
   const isWaitingForUser = !isLoading && lastMessage?.role === 'assistant';
 
   return (
-    <div className="flex justify-center items-center h-[90vh] p-4 opacity-0 animate-slide-up-fade bg-[#0B1120] font-['Inter']">
-      <div className="w-full max-w-[850px] h-full flex flex-col overflow-hidden bg-slate-900/50 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl relative">
-        {/* Glow effects */}
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
-        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[100px] rounded-full pointer-events-none"></div>
+    <div className="flex justify-center h-[100dvh] w-full opacity-0 animate-slide-up-fade bg-[var(--bg-primary)] font-['Inter']">
+      <div className="w-full max-w-4xl h-full flex flex-col overflow-hidden relative">
+        {/* Glow effects - toned down for cleaner look */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-color)]/20 to-transparent z-20"></div>
 
-        <div className="px-8 py-6 border-b border-slate-800/80 flex justify-between items-center bg-slate-900/80 z-10">
-          <h2 className="m-0 text-xl font-bold text-white tracking-tight font-heading">AI Career Coach</h2>
-          <div className="flex items-center gap-2.5 text-sm font-medium text-slate-400">
+        <div className="px-4 md:px-8 py-4 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--bg-primary)]/80 backdrop-blur-md z-20 sticky top-0">
+          <h2 className="m-0 text-xl font-bold text-[var(--text-primary)] tracking-tight font-heading">AI Career Coach</h2>
+          <div className="flex items-center gap-2.5 text-sm font-medium text-[var(--text-secondary)]">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -203,29 +202,29 @@ const inferMetadata = (message: string, backendMeta: any) => {
           </div>
         </div>
         {error && (
-          <div className="p-4 bg-red-900/30 text-red-400 text-center font-medium border-b border-red-900/50 z-10">
+          <div className="p-4 bg-red-50 text-red-600 text-center font-medium border-b border-red-100 z-10">
             Error: {error}
           </div>
         )}
         
-        <div className="flex-1 overflow-y-auto px-8 py-10 flex flex-col z-10 relative scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 py-6 flex flex-col z-10 relative scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
           {messages.map((msg, idx) => (
             // Skip rendering system messages in the UI
             msg.role !== 'system' && <MessageBubble key={idx} message={msg} />
           ))}
           
           {isLoading && (
-            <div className="flex gap-4 w-full mb-10 opacity-0 animate-slide-up-fade flex-row">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border bg-slate-800 border-slate-700 text-indigo-400">
-                <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+            <div className="flex gap-4 w-full mb-6 opacity-0 animate-slide-up-fade flex-row">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm border bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--accent-color)] mt-1">
+                <div className="w-5 h-5 rounded-full border-2 border-[var(--accent-color)] border-t-transparent animate-spin"></div>
               </div>
-              <div className="flex flex-col max-w-[80%] items-start">
-                <div className="text-sm text-slate-400 mb-2 font-medium tracking-wide">Ottobon AI</div>
-                <div className="px-6 py-5 shadow-sm text-base leading-relaxed bg-slate-800/80 border border-slate-700/50 rounded-2xl rounded-tl-sm text-slate-300">
+              <div className="flex flex-col max-w-[85%] items-start">
+                <div className="text-xs md:text-sm text-[var(--text-secondary)] mb-1 font-medium tracking-wide">Ottobon AI</div>
+                <div className="px-4 py-3 md:px-5 md:py-4 shadow-sm text-[0.95rem] leading-relaxed bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-2xl rounded-tl-sm text-[var(--text-primary)]">
                   <div className="flex gap-1.5 py-1">
-                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce" style={{ animationDelay: '-0.32s' }}></span>
-                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce" style={{ animationDelay: '-0.16s' }}></span>
-                    <span className="w-2 h-2 bg-indigo-500/70 rounded-full animate-bounce"></span>
+                    <span className="w-2 h-2 bg-[var(--accent-color)]/70 rounded-full animate-bounce" style={{ animationDelay: '-0.32s' }}></span>
+                    <span className="w-2 h-2 bg-[var(--accent-color)]/70 rounded-full animate-bounce" style={{ animationDelay: '-0.16s' }}></span>
+                    <span className="w-2 h-2 bg-[var(--accent-color)]/70 rounded-full animate-bounce"></span>
                   </div>
                 </div>
               </div>
@@ -234,10 +233,10 @@ const inferMetadata = (message: string, backendMeta: any) => {
           <div ref={endOfMessagesRef} />
         </div>
 
-        <div className="px-8 py-6 border-t border-slate-800/80 bg-slate-900/90 min-h-[100px] flex flex-col justify-center z-10 backdrop-blur-md">
+        <div className="px-4 md:px-8 py-4 border-t border-[var(--border-color)] bg-[var(--bg-primary)]/90 min-h-[80px] flex flex-col justify-center z-20 backdrop-blur-xl">
           {recommendedTracks ? (
             <button 
-              className="w-full p-4 text-[1.1rem] bg-indigo-600 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/20 hover:bg-indigo-500 hover:shadow-indigo-500/30 transition-all opacity-0 animate-slide-up-fade flex items-center justify-center gap-3" 
+              className="w-full p-4 text-[1.1rem] bg-[var(--accent-color)] text-[#FAF7F2] font-semibold rounded-xl shadow-lg shadow-[#C9A84C]/20 hover:bg-[var(--accent-hover)] transition-all opacity-0 animate-slide-up-fade flex items-center justify-center gap-3" 
               onClick={() => onTracksGenerated(recommendedTracks, { chatHistory: messages })}
             >
               View Recommended Tracks
